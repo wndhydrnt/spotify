@@ -141,6 +141,13 @@ type Options struct {
 	Offset *int
 }
 
+// EnableRetryOnRateLimit enables a rate limit aware transport
+func (c *Client) EnableRetryOnRateLimit() {
+	parentTransport := c.http.Transport
+	rateLimitTransport := &rateLimitAwareTransport{proxied: parentTransport}
+	c.http.Transport = rateLimitTransport
+}
+
 // NewReleasesOpt is like NewReleases, but it accepts optional parameters
 // for filtering the results.
 func (c *Client) NewReleasesOpt(opt *Options) (albums *SimpleAlbumPage, err error) {
