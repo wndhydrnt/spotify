@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strconv"
 	"time"
 )
 
@@ -22,17 +23,19 @@ func (rlt *rateLimitAwareTransport) RoundTrip(r *http.Request) (*http.Response, 
 		return resp, nil
 	}
 
-	retryAfter := resp.Header.Get("Retry-After")
-	if retryAfter == "" {
+	headerVal := resp.Header.Get("Retry-After")
+	if headerVal == "" {
 		return nil, fmt.Errorf("API Rate Limit reached but Retry-After header is not set")
 	}
 
-	sleep, err := time.ParseDuration(retryAfter + "s")
+	retryAfter, err := strconv.ParseInt(headerVal, 10, 64)
 	if err != nil {
-		return nil, fmt.Errorf("Unable to parse value of Retry-After header into Duration: %s", err)
+		return nil, fmt.Errorf("Unable to convert value of Retry-After header to int: %s", err)
 	}
 
-	log.Printf("Sleeping for %s seconds\n", retryAfter)
+	sleep := time.Duration(retryAfter) * time.Second * 2
+
+	log.Printf("Sleeping for %s\n", sleep.String())
 	time.Sleep(sleep)
 
 	return rlt.proxied.RoundTrip(r2)
