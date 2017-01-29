@@ -33,11 +33,15 @@ func (rlt *rateLimitAwareTransport) RoundTrip(r *http.Request) (*http.Response, 
 		return nil, fmt.Errorf("Unable to convert value of Retry-After header to int: %s", err)
 	}
 
-	sleep := time.Duration(retryAfter) * time.Second * 2
+	var sleep time.Duration
+	if retryAfter == 0 {
+		sleep = 2 * time.Second
+	} else {
+		sleep = time.Duration(retryAfter) * time.Second * 2
+	}
 
 	log.Printf("Sleeping for %s\n", sleep.String())
 	time.Sleep(sleep)
-
 	return rlt.proxied.RoundTrip(r2)
 }
 
